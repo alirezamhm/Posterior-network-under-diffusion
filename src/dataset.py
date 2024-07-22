@@ -15,17 +15,17 @@ corruptions = (
     'motion_blur','pixelate','shot_noise','snow','zoom_blur',
 )
 
-normalizers = {
-	'cifar10':  Normalize([0.491, 0.482, 0.446], [0.247, 0.243, 0.261]),
-	'tin':      Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
-}
-
 augmentations = {
 	'f': RandomHorizontalFlip(),
 	'c': RandomCrop(32, 4),
 	'r': RandomRotation(15),
 	'fcr': Compose([RandomHorizontalFlip(),RandomCrop(32, 4),RandomRotation(15)]),
 	'fcr64': Compose([RandomHorizontalFlip(),RandomCrop(64, 4),RandomRotation(15)]),
+}
+
+normalizers = {
+	'cifar10':  Normalize([0.491, 0.482, 0.446], [0.247, 0.243, 0.261]),
+	'tin':      Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
 }
 
 datashapes = {
@@ -38,7 +38,7 @@ data_dirs = {
 	'tin': './data/TIN/',
 }
 
-def make_transform(data, scale, aug=[], res=None):
+def make_transform(data, scale, aug=[]):
 	transforms =  [ ToImage() ]
 	transforms += [ augmentations[a] for a in aug ]
 	transforms += [ ToDtype(torch.float32, scale=True) ] # transforms [0,255] to [0,1]
@@ -55,15 +55,17 @@ def load_data(data, mb=128, scale=None, aug=[], cpus=1):
 	if data == 'tin':
 		aug = [a if a != 'fcr' else 'fcr64' for a in aug if a != 'c'] # remove 'c' and replace 'fcr' with 'fcr64'
 	
-	data_tr =  DatasetC(data_dir, 'train', make_transform(data, scale, aug, res))
-	data_val = DatasetC(data_dir, 'val',   make_transform(data, scale))
-	data_c =  [DatasetC(data_dir, c,       make_transform(data, scale)) for c in corruptions]
+	data_tr  =  DatasetC(data_dir, 'train', make_transform(data, scale, aug))
+	data_val =  DatasetC(data_dir, 'val',   make_transform(data, scale))
+	data_c   = [DatasetC(data_dir, c,       make_transform(data, scale)) for c in corruptions]
+
+	class_counts = np.bincount(data_tr.targets)
 
 	loader_tr   =  DataLoader(data_tr,  batch_size=mb,  shuffle=True,  num_workers=cpus, pin_memory=True, persistent_workers=True)	
 	loader_val  = [DataLoader(data_val, batch_size=100, shuffle=False, num_workers=cpus, pin_memory=True, persistent_workers=True)]
 	loader_val += [DataLoader(data,     batch_size=100, shuffle=False, num_workers=cpus, pin_memory=True, persistent_workers=True) for data in data_c]
 
-	return loader_tr, loader_val, res, classes
+	return loader_tr, loader_val, res, classes, class_counts
 
 class DatasetC(datasets.VisionDataset):
 	def __init__(self, root, fold, transform=None):
