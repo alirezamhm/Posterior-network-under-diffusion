@@ -4,6 +4,7 @@ saved_models/*
 test-notebook.ipynb
 wandb
 posterior-network-under-diffusion
+results.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
