@@ -6,7 +6,7 @@ import torchmetrics
 import math
 
 from src.dataset import corruptions
-from architectures import architectures
+from src.architectures import architectures
 
 class Baseline(L.LightningModule):
     def __init__(self, args, res, num_classes):

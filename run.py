@@ -14,7 +14,7 @@ parser = argparse.ArgumentParser(description='Posterior network under diffusion'
 parser.add_argument('-d', '--data', choices=['cifar10'], default='cifar10')
 parser.add_argument('--arch', choices=architectures.keys(), default='resnet18')
 parser.add_argument('-t', '--type', choices=['baseline', 'posterior_network'], default='baseline')
-parser.add_argument('-b', '--batchsize', type=int, default=128)
+parser.add_argument('-b', '--batchsize', type=int, default=256)
 parser.add_argument('-e', '--epoch', type=int, default=200)
 parser.add_argument('--lr', type=float, default=0.01)
 parser.add_argument('--scaling', choices=['normal','uniform'], default='normal', help='Data normalization')
@@ -29,7 +29,7 @@ def args2str(args):
     s += f'-E({args.epoch})' 
     s += f'-S({args.seed})'
     if args.aug:
-        s += f'-A({','.join(args.aug)})'
+        s += f'-A({",".join(args.aug)})'
     return s
 
 

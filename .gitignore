@@ -2,6 +2,8 @@ data/CIFAR-10
 .out
 saved_models/*
 test-notebook.ipynb
+wandb
+posterior-network-under-diffusion
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
