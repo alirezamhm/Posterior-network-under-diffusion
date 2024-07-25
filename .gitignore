@@ -5,7 +5,7 @@ test-notebook.ipynb
 wandb
 posterior-network-under-diffusion
 results.csv
-t.py
+lightning_logs
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

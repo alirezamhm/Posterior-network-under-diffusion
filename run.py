@@ -6,6 +6,7 @@ import lightning as L
 from src.architectures import architectures
 from src.dataset import load_data
 from src.baseline import Baseline
+from src.posterior_network import PosteriorNetwork
 
 AUGMENTATIONS = ('','f','c','r','fcr')
 
@@ -69,11 +70,11 @@ if __name__=='__main__':
     if args.type == 'baseline':
         model = Baseline(args, res, num_classes)
     elif args.type == 'posterior-network':
-        pass
+        model = PosteriorNetwork(args, res, num_classes, class_counts)
     
     # train model
     trainer = L.Trainer(**trainer_args)
     trainer.fit(model, loaders_tr, loaders_val)
-    trainer.validate(model, loaders_val, verbose=True)
+    trainer.validate(model, loaders_val)
 
     
