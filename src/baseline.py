@@ -36,7 +36,7 @@ class Baseline(L.LightningModule):
     
     def validation_step(self, batch, batch_idx, dataloader_idx=0):
         x, y = batch
-        logits = self.net(x)
+        logits = self.forward(x)
         loss, error = self.statistics(logits, y)
 
         # clean
