@@ -13,9 +13,11 @@ AUGMENTATIONS = ('','f','c','r','fcr')
 parser = argparse.ArgumentParser(description='Posterior network under diffusion')
 parser.add_argument('-d', '--data', choices=['cifar10'], default='cifar10')
 parser.add_argument('--arch', choices=architectures.keys(), default='resnet18')
-parser.add_argument('-t', '--type', choices=['baseline', 'posterior_network'], default='baseline')
+parser.add_argument('-t', '--type', choices=['baseline', 'posterior-network'], default='baseline')
 parser.add_argument('-b', '--batchsize', type=int, default=256)
 parser.add_argument('-e', '--epoch', type=int, default=200)
+parser.add_argument('-ld', '--latent-dim', type=int, default=6)
+parser.add_argument('-fl', '--flow-length', type=int, default=6)
 parser.add_argument('--lr', type=float, default=0.01)
 parser.add_argument('--scaling', choices=['normal','uniform'], default='normal', help='Data normalization')
 parser.add_argument('-a', '--aug', choices=AUGMENTATIONS, nargs="+", default='', help='Augmentations')
@@ -30,6 +32,8 @@ def args2str(args):
     s += f'-S({args.seed})'
     if args.aug:
         s += f'-A({",".join(args.aug)})'
+    if args.type == 'posterior-network':
+        s += f'-LD({args.latent_dim})-FL({args.flow_length})'
     return s
 
 
@@ -63,7 +67,7 @@ if __name__=='__main__':
     # create model
     if args.type == 'baseline':
         model = Baseline(args, res, num_classes)
-    elif args.type == 'posterior_network':
+    elif args.type == 'posterior-network':
         pass
     
     # train model

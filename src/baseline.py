@@ -28,7 +28,7 @@ class Baseline(L.LightningModule):
         
     def training_step(self, batch, batch_idx):
         x, y = batch
-        logits = self.net(x)
+        logits = self.forward(x)
         loss, error = self.statistics(logits, y)
         self.log('train_loss', loss)
         self.log('train_error', error)

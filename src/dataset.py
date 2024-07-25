@@ -59,7 +59,7 @@ def load_data(data, mb=128, scale=None, aug=[], cpus=1):
 	data_val =  DatasetC(data_dir, 'val',   make_transform(data, scale))
 	data_c   = [DatasetC(data_dir, c,       make_transform(data, scale)) for c in corruptions]
 
-	class_counts = np.bincount(data_tr.targets)
+	class_counts = torch.tensor(np.bincount(data_tr.targets))
 
 	loader_tr   =  DataLoader(data_tr,  batch_size=mb,  shuffle=True,  num_workers=cpus, pin_memory=True, persistent_workers=True)	
 	loader_val  = [DataLoader(data_val, batch_size=100, shuffle=False, num_workers=cpus, pin_memory=True, persistent_workers=True)]
