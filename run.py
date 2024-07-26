@@ -7,6 +7,7 @@ from src.architectures import architectures
 from src.dataset import load_data
 from src.baseline import Baseline
 from src.posterior_network import PosteriorNetwork
+from src.normalizing_flow import flow_types
 
 AUGMENTATIONS = ('','f','c','r','fcr')
 
@@ -19,6 +20,7 @@ parser.add_argument('-b', '--batchsize', type=int, default=256)
 parser.add_argument('-e', '--epoch', type=int, default=200)
 parser.add_argument('-ld', '--latent-dim', type=int, default=6, help='Latent dimension')
 parser.add_argument('-fl', '--flow-length', type=int, default=6, help='Number of flow layers')
+parser.add_argument('-ft', '--flow-type', choices=flow_types.keys(), default='radial', help='Type of the normalizing flow')
 parser.add_argument('--lr', type=float, default=0.01)
 parser.add_argument('--regr', type=float, default=1e-5, help='Regularization factor in Bayesian loss')
 parser.add_argument('--scaling', choices=['normal','uniform'], default='normal', help='Data normalization')
@@ -35,7 +37,7 @@ def args2str(args):
     if args.aug:
         s += f'-A({",".join(args.aug)})'
     if args.type == 'posterior-network':
-        s += f'-LD({args.latent_dim})-FL({args.flow_length})'
+        s += f'-LD({args.latent_dim})-FL({args.flow_length}-FT({args.flow_type})'
     return s
 
 

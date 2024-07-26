@@ -1,11 +1,17 @@
 import torch
-from pyro.distributions.transforms.radial import Radial
 from torch import nn
 import torch.distributions as tdist
+from pyro.distributions.transforms.radial import Radial
+from pyro.distributions.transforms.affine_autoregressive import affine_autoregressive
+from functools import partial
 
+flow_types = {
+    'radial': Radial,
+    'iaf128': partial(affine_autoregressive, hidden_dims=[128, 128])
+}
 
 class NormalizingFlow(nn.Module):
-    def __init__(self, dim, flow_length):
+    def __init__(self, dim, flow_length, flow_type='radial'):
         super(NormalizingFlow, self).__init__()
         self.dim = dim
         self.flow_length = flow_length
@@ -13,7 +19,8 @@ class NormalizingFlow(nn.Module):
         self.mean = nn.Parameter(torch.zeros(self.dim), requires_grad=False)
         self.cov = nn.Parameter(torch.eye(self.dim), requires_grad=False)
         
-        self.transforms = nn.Sequential(*(Radial(dim) for _ in range(flow_length)))
+        self.transforms = nn.Sequential(*(flow_types[flow_type](dim) for _ in range(flow_length)))
+        
 
     def forward(self, z):
         sum_log_jacobians = 0

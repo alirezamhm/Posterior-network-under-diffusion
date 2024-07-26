@@ -16,7 +16,7 @@ class PosteriorNetwork(L.LightningModule):
         self.num_classes = num_classes
         self.net = architectures[args.arch](num_classes=args.latent_dim)
         self.corruptions = corruptions
-        self.flow = nn.ModuleList([NormalizingFlow(dim=args.latent_dim, flow_length=args.flow_length) for _ in range(num_classes)])
+        self.flow = nn.ModuleList([NormalizingFlow(dim=args.latent_dim, flow_length=args.flow_length, flow_type=args.flow_type) for _ in range(num_classes)])
         self.batch_norm = nn.BatchNorm1d(num_features=args.latent_dim)
         self.register_buffer("class_counts", class_counts) # Puts tensor on the same device as the model
 
