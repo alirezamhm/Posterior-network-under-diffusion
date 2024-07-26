@@ -41,8 +41,8 @@ class PosteriorNetwork(L.LightningModule):
     
     def uce_loss(self, alpha, y):
         alpha_0 = alpha.sum(1).unsqueeze(-1).repeat(1, self.num_classes)
-        entropy = Dirichlet(alpha).entropy().sum()
-        return torch.sum(y*(torch.digamma(alpha_0) - torch.digamma(alpha))) - self.args.regr * entropy
+        entropy = Dirichlet(alpha).entropy().mean()
+        return torch.mean(y*(torch.digamma(alpha_0) - torch.digamma(alpha))) - self.args.regr * entropy
 
     def training_step(self, batch, batch_idx):
         x, y = batch
