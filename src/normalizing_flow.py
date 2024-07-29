@@ -20,7 +20,6 @@ class NormalizingFlow(nn.Module):
         self.cov = nn.Parameter(torch.eye(self.dim), requires_grad=False)
         
         self.transforms = nn.Sequential(*(flow_types[flow_type](dim) for _ in range(flow_length)))
-        
 
     def forward(self, z):
         sum_log_jacobians = 0

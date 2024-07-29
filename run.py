@@ -37,7 +37,7 @@ def args2str(args):
     if args.aug:
         s += f'-A({",".join(args.aug)})'
     if args.type == 'posterior-network':
-        s += f'-LD({args.latent_dim})-FL({args.flow_length}-FT({args.flow_type})'
+        s += f'-LD({args.latent_dim})-FL({args.flow_length})-FT({args.flow_type})'
     return s
 
 

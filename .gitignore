@@ -1,4 +1,7 @@
 data/CIFAR-10
+data/Tiny-ImageNet-C
+data/TIN
+
 .out
 saved_models/*
 test-notebook.ipynb
