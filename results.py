@@ -26,7 +26,7 @@ def print_summary(metrics, names):
         corr_loss = np.mean([metrics[i][f'loss/{c}_{k+1}'] for c in corruptions for k in range(5)])
         corr_error = np.mean([metrics[i][f'error/{c}_{k+1}'] for c in corruptions for k in range(5)])
 
-        print(f'{i+1:03d} | {id} | loss {loss:.4f} error {error:.4f}  corr_loss {corr_loss:.4f} corr_error {corr_error:.4f}')        
+        print(f'{i+1:03d} | loss {loss:.4f} error {error:.4f}  corr_loss {corr_loss:.4f} corr_error {corr_error:.4f} | {id} ')        
 
 if __name__=='__main__':
     metrics, configs, names = extract_wandb()
