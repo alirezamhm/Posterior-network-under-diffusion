@@ -22,7 +22,7 @@ class PosteriorNetwork(L.LightningModule):
 
         
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.args.lr)
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.args.lr, weight_decay=self.args.wd)
         return optimizer
 
     def forward(self, x):

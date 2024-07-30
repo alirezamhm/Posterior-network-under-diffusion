@@ -18,7 +18,7 @@ class Baseline(L.LightningModule):
         return self.net(x)
         
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.args.lr)
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.args.lr, weight_decay=self.args.wd)
         return optimizer
     
     def statistics(self, logits, y):

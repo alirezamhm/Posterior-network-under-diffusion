@@ -9,4 +9,4 @@
 
 module load scicomp-python-env
 
-python3 run.py -d tin --arch resnet18 -t baseline --lr 1e-3 -a fcr --cpus 6 --valfreq 20
+python3 run.py -d tin --arch resnet18 -t baseline --lr 1e-3 --weight-decay 5e-4 -a fcr --cpus 6 --valfreq 20

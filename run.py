@@ -22,6 +22,7 @@ parser.add_argument('-ld', '--latent-dim', type=int, default=6, help='Latent dim
 parser.add_argument('-fl', '--flow-length', type=int, default=6, help='Number of flow layers')
 parser.add_argument('-ft', '--flow-type', choices=flow_types.keys(), default='radial', help='Type of the normalizing flow')
 parser.add_argument('--lr', type=float, default=0.01)
+parser.add_argument('--wd', '--weight-decay', type=float, default=1e-4)
 parser.add_argument('--regr', type=float, default=1e-5, help='Regularization factor in Bayesian loss')
 parser.add_argument('--scaling', choices=['normal','uniform'], default='normal', help='Data normalization')
 parser.add_argument('-a', '--aug', choices=AUGMENTATIONS, nargs="+", default='', help='Augmentations')
