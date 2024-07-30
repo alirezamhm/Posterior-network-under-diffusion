@@ -4,7 +4,7 @@ import argparse
 import lightning as L
 
 from src.architectures import architectures
-from src.dataset import load_data
+from src.dataset import load_data, data_dirs
 from src.baseline import Baseline
 from src.posterior_network import PosteriorNetwork
 from src.normalizing_flow import flow_types
@@ -13,7 +13,7 @@ AUGMENTATIONS = ('','f','c','r','fcr')
 
 
 parser = argparse.ArgumentParser(description='Posterior network under diffusion')
-parser.add_argument('-d', '--data', choices=['cifar10'], default='cifar10')
+parser.add_argument('-d', '--data', choices=data_dirs.keys(), default='cifar10')
 parser.add_argument('--arch', choices=architectures.keys(), default='resnet18')
 parser.add_argument('-t', '--type', choices=['baseline', 'posterior-network'], default='baseline')
 parser.add_argument('-b', '--batchsize', type=int, default=256)

@@ -15,7 +15,7 @@ class Baseline(L.LightningModule):
         self.corruptions = corruptions
         
     def forward(self, x):
-        self.net(x)
+        return self.net(x)
         
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.args.lr)

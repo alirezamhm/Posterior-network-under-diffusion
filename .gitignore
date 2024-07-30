@@ -1,7 +1,6 @@
 data/CIFAR-10
 data/Tiny-ImageNet-C
 data/TIN
-
 .out
 saved_models/*
 test-notebook.ipynb
@@ -9,6 +8,7 @@ wandb
 posterior-network-under-diffusion
 results.csv
 lightning_logs
+t.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
