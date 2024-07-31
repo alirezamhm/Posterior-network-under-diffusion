@@ -19,6 +19,7 @@ class PosteriorNetwork(L.LightningModule):
         self.flow = nn.ModuleList([NormalizingFlow(dim=args.latent_dim, flow_length=args.flow_length, flow_type=args.flow_type) for _ in range(num_classes)])
         self.batch_norm = nn.BatchNorm1d(num_features=args.latent_dim)
         self.register_buffer("class_counts", class_counts) # Puts tensor on the same device as the model
+        self.batch_per_intensity = int(50,000/(5*args.val_batchsize)) # separate the intensity in each corrupt loader
 
         
     def configure_optimizers(self):
@@ -64,7 +65,7 @@ class PosteriorNetwork(L.LightningModule):
 
         # corrs 
         if dataloader_idx > 0:
-            intensity = 1 + batch_idx // 100   # assumes batch_size 100
+            intensity = 1 + batch_idx // self.batch_per_intensity   
             self.log(f'loss/{self.corruptions[dataloader_idx-1]}_{intensity}', loss, add_dataloader_idx=False, sync_dist=True)
             self.log(f'error/{self.corruptions[dataloader_idx-1]}_{intensity}', error, add_dataloader_idx=False, sync_dist=True)
     

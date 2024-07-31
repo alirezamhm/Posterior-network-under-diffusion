@@ -48,7 +48,7 @@ def make_transform(data, scale, aug=[]):
 		transforms += [ Lambda(linearscale) ]
 	return Compose(transforms)
 
-def load_data(data, mb=128, scale=None, aug=[], cpus=1):
+def load_data(data, mb=128, scale=None, aug=[], cpus=1, vb=100):
 	res, classes = datashapes[data]
 	data_dir = data_dirs[data]
 
@@ -62,8 +62,8 @@ def load_data(data, mb=128, scale=None, aug=[], cpus=1):
 	class_counts = torch.tensor(np.bincount(data_tr.targets))
 
 	loader_tr   =  DataLoader(data_tr,  batch_size=mb,  shuffle=True,  num_workers=cpus, pin_memory=True, persistent_workers=True)	
-	loader_val  = [DataLoader(data_val, batch_size=100, shuffle=False, num_workers=cpus, pin_memory=True, persistent_workers=True)]
-	loader_val += [DataLoader(data,     batch_size=100, shuffle=False, num_workers=cpus, pin_memory=True, persistent_workers=True) for data in data_c]
+	loader_val  = [DataLoader(data_val, batch_size=vb, shuffle=False, num_workers=cpus, pin_memory=True, persistent_workers=True)]
+	loader_val += [DataLoader(data,     batch_size=vb, shuffle=False, num_workers=cpus, pin_memory=True, persistent_workers=True) for data in data_c]
 
 	return loader_tr, loader_val, res, classes, class_counts
 

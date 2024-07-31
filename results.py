@@ -9,9 +9,10 @@ def extract_wandb():
     runs = wandb.Api().runs('alirezamhm/posterior-network-under-diffusion')
     metrics, configs, names = [], [], []
     for run in runs: 
-        metrics.append(run.summary._json_dict)
-        configs.append({k: v for k,v in run.config.items() if not k.startswith('_')})
-        names.append(run.name)
+        if run.state == 'finished':
+            metrics.append(run.summary._json_dict)
+            configs.append({k: v for k,v in run.config.items() if not k.startswith('_')})
+            names.append(run.name)
     df = pd.DataFrame({"log": metrics, "config": configs, "name": names})
     df.to_csv('results.csv')
 
