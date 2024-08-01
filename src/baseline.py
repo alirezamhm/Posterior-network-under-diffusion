@@ -13,7 +13,6 @@ class Baseline(L.LightningModule):
         self.num_classes = num_classes
         self.net = architectures[args.arch](num_classes=num_classes)
         self.corruptions = corruptions
-        self.batch_per_intensity = int(50,000/(5*args.val_batchsize)) # separate the intensity in each corrupt loader
         
     def forward(self, x):
         return self.net(x)
@@ -47,7 +46,7 @@ class Baseline(L.LightningModule):
 
         # corrs 
         if dataloader_idx > 0:
-            intensity = 1 + batch_idx // self.batch_per_intensity  
+            intensity = 1 + batch_idx // int(50000/(5*self.args.val_batchsize)) # separate the intensity in each corrupt loader
             self.log(f'loss/{self.corruptions[dataloader_idx-1]}_{intensity}', loss, add_dataloader_idx=False, sync_dist=True)
             self.log(f'error/{self.corruptions[dataloader_idx-1]}_{intensity}', error, add_dataloader_idx=False, sync_dist=True)
     
