@@ -24,9 +24,11 @@ class PosteriorNetwork(L.LightningModule):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.args.lr, weight_decay=self.args.wd)
         return optimizer
 
+    def net_forward(self, x):
+        return self.batch_norm(self.net(x))
+
     def forward(self, x):
-        z = self.net(x)
-        z = self.batch_norm(z)
+        z = self.net_forward(x) 
         log_p = torch.stack([self.flow[c].log_prob(z) for c in range(self.num_classes)], dim=1)
         alpha = 1. + self.class_counts * torch.exp(log_p)
         return alpha
@@ -66,6 +68,15 @@ class PosteriorNetwork(L.LightningModule):
             intensity = 1 + batch_idx // int(50000/(5*self.args.val_batchsize)) # separate the intensity in each corrupt loader
             self.log(f'loss/{self.corruptions[dataloader_idx-1]}_{intensity}', loss, add_dataloader_idx=False, sync_dist=True)
             self.log(f'error/{self.corruptions[dataloader_idx-1]}_{intensity}', error, add_dataloader_idx=False, sync_dist=True)
+            
+    def process_batch_with_class_flow(self, z, y):
+        results = torch.zeros((self.args.flow_length, *z.shape))
+        for class_value in range(self.num_classes):
+            mask = (y == class_value)
+            if mask.any():
+                flow = self.flow[class_value]
+                results[:, mask] = flow.apply_transfer_layers(z[mask])
+        return results
     
     
     

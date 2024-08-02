@@ -33,3 +33,11 @@ class NormalizingFlow(nn.Module):
         z, sum_log_jacobians = self.forward(x)
         log_prob_z = tdist.MultivariateNormal(self.mean, self.cov).log_prob(z)
         return log_prob_z + sum_log_jacobians
+    
+    def apply_transfer_layers(self, z):
+        layers = []
+        for transform in self.transforms:
+            z_next = transform(z)
+            layers.append(z_next)
+            z = z_next
+        return torch.stack(layers, dim=0)
