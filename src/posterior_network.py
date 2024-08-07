@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 import lightning as L
 from torch import nn
@@ -18,10 +19,10 @@ class PosteriorNetwork(L.LightningModule):
         self.corruptions = corruptions
         self.flow = nn.ModuleList([NormalizingFlow(dim=args.latent_dim, flow_length=args.flow_length, flow_type=args.flow_type) for _ in range(num_classes)])
         self.batch_norm = nn.BatchNorm1d(num_features=args.latent_dim)
-        self.register_buffer("class_counts", class_counts) # Puts tensor on the same device as the model
+        self.register_buffer("class_counts", class_counts) # Put tensor on the same device as the model
         
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.args.lr, weight_decay=self.args.wd)
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.args.lr, weight_decay=self.args.weight_decay)
         return optimizer
 
     def net_forward(self, x):
@@ -45,10 +46,30 @@ class PosteriorNetwork(L.LightningModule):
         entropy = Dirichlet(alpha).entropy().mean()
         return torch.mean(y*(torch.digamma(alpha_0) - torch.digamma(alpha))) - self.args.regr * entropy
 
+    def calc_noise_levels(self, function='linear', min=0.01, max=1):
+        if function == 'linear':
+            return torch.linspace(min, max, self.args.flow_length)
+        elif function == 'log':
+            return torch.logspace(np.log10(min), np.log10(max), self.args.flow_length)
+        elif function == 'sqrt':
+            return torch.linspace(min**2, max**2, self.args.flow_length)**0.5
+        else:
+            raise ValueError(f'Unknown function {function}')
+
+    def add_noise(self, x):
+        n_noise_sample = 5 # number of noisy samples per image
+        # repeat the batch to add noise for each flow
+        x = x.unsqueeze(0).unsqueeze(2).repeat(self.args.flow_length, 1,  n_noise_sample, 1, 1, 1) # (flow_length, batch, n_noise_sample, c, h, w)
+        levels = self.calc_noise_levels(function='linear')
+        x += torch.randn_like(x) * levels.view(-1, 1, 1, 1, 1)
+        
     def training_step(self, batch, batch_idx):
         x, y = batch
-        alpha = self.forward(x)
-        loss, error = self.statistics(alpha, y)
+        if self.args.type == 'posterior-network':
+            alpha = self.forward(x)
+            loss, error = self.statistics(alpha, y)
+        else:
+            x = self.add_noise(x)
         self.log('train_loss', loss)
         self.log('train_error', error)
         return loss
