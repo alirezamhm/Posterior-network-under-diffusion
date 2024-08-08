@@ -19,7 +19,8 @@ class Baseline(L.LightningModule):
         
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.args.lr, weight_decay=self.args.weight_decay)
-        return optimizer
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.args.epoch)
+        return [optimizer], [scheduler]
     
     def statistics(self, logits, y):
         loss = F.cross_entropy(logits, y)

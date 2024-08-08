@@ -9,4 +9,4 @@
 
 module load scicomp-python-env
 
-python3 run.py -d tin --arch resnet18 -t posterior-network -b 4096 -vb 2000 -ld 16 -fl 10 --regr 1e-5 -wd 1e-6 --lr 5e-3 -a fcr --cpus 8 --valfreq 50
+python3 run.py -d tin --arch resnet18 -t posterior-network -b 4096 -vb 2000 -ld 16 -fl 12 --regr 1e-5 -wd 1e-6 --lr 5e-2 -a fcr --cpus 8 --valfreq 50

@@ -23,7 +23,8 @@ class PosteriorNetwork(L.LightningModule):
         
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.args.lr, weight_decay=self.args.weight_decay)
-        return optimizer
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.args.epoch)
+        return [optimizer], [scheduler]
 
     def net_forward(self, x):
         return self.batch_norm(self.net(x))
