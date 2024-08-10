@@ -4,6 +4,7 @@ import lightning as L
 from torch import nn
 import torch.nn.functional as F
 from torch.distributions.dirichlet import Dirichlet
+import torch.distributions as tdist
 
 from src.dataset import corruptions
 from src.architectures import architectures
@@ -35,6 +36,12 @@ class PosteriorNetwork(L.LightningModule):
         alpha = 1. + self.class_counts * torch.exp(log_p)
         return alpha
     
+    def noisy_forward(self, x_noisy):
+        flow_length, batch_size, n_noise_sample, c, h, w = x_noisy.shape
+        x_noisy = x_noisy.view(flow_length * batch_size * n_noise_sample, c, h, w) # reshape to input to the network
+        z_noisy = self.net_forward(x_noisy).view(flow_length, batch_size, n_noise_sample, -1)
+        return z_noisy
+    
     def statistics(self, alpha, y):
         y_hot = F.one_hot(y, num_classes=self.num_classes).float()
         loss = self.uce_loss(alpha, y_hot)
@@ -46,6 +53,21 @@ class PosteriorNetwork(L.LightningModule):
         alpha_0 = alpha.sum(1).unsqueeze(-1).repeat(1, self.num_classes)
         entropy = Dirichlet(alpha).entropy().mean()
         return torch.mean(y*(torch.digamma(alpha_0) - torch.digamma(alpha))) - self.args.regr * entropy
+
+    def gaussian_log_prob(self, z):
+        mean = torch.mean(z, dim=0)
+        cov = torch.cov(z.T)
+        return tdist.MultivariateNormal(mean, cov).log_prob(z)
+
+    def kl_loss(self, z_noisy, y):
+        loss = 0
+        for cls in range(self.num_classes):
+            z_cls = z_noisy[:, (y == cls), :, :].view(self.args.flow_length, -1, self.args.latent_dim) # (flow_length, class_samples, latent_dim) 
+            for i in range(self.args.flow_length):
+                log_q_z = self.gaussian_log_prob(z_cls[i])
+                log_p_z = self.flow[cls].log_prob(z_cls[i], start=i+1)
+                loss += (torch.exp(log_q_z)*(log_q_z - log_p_z)).mean()
+        return loss/(self.num_classes*self.args.flow_length)
 
     def calc_noise_levels(self, function='linear', min=0.01, max=1):
         if function == 'linear':
@@ -60,17 +82,19 @@ class PosteriorNetwork(L.LightningModule):
     def add_noise(self, x):
         n_noise_sample = 5 # number of noisy samples per image
         # repeat the batch to add noise for each flow
-        x = x.unsqueeze(0).unsqueeze(2).repeat(self.args.flow_length, 1,  n_noise_sample, 1, 1, 1) # (flow_length, batch, n_noise_sample, c, h, w)
+        x = x.unsqueeze(0).unsqueeze(2).repeat(self.args.flow_length, 1, self.n_noise_sample, 1, 1, 1) # (flow_length, batch, n_noise_sample, c, h, w)
         levels = self.calc_noise_levels(function='linear')
         x += torch.randn_like(x) * levels.view(-1, 1, 1, 1, 1)
+        return x
         
     def training_step(self, batch, batch_idx):
         x, y = batch
-        if self.args.type == 'posterior-network':
-            alpha = self.forward(x)
-            loss, error = self.statistics(alpha, y)
-        else:
-            x = self.add_noise(x)
+        alpha = self.forward(x) 
+        loss, error = self.statistics(alpha, y)
+        if self.args.type == 'posterior-network-diffusion':
+            x_noisy = self.add_noise(x)
+            z_noisy = self.noisy_forward(x_noisy)
+            loss += self.kl_loss(z_noisy, y)
         self.log('train_loss', loss)
         self.log('train_error', error)
         return loss

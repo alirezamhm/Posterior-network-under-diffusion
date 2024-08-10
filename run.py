@@ -44,7 +44,7 @@ def args2str(args):
 
 
 if __name__=='__main__':
-    L.pytorch.seed_everything(args.seed)
+    L.pytorch.seed_everything(args.seed, workers=True)
 
     wandb_logger = L.pytorch.loggers.WandbLogger(project='posterior-network-under-diffusion', config=vars(args), name=args2str(args))
 
@@ -64,7 +64,8 @@ if __name__=='__main__':
 		'logger': wandb_logger,
 		'enable_progress_bar': False,
  		'precision': 'bf16-mixed' if torch.cuda.is_available() and torch.cuda.is_bf16_supported() else '16-mixed',
-		'benchmark': True
+		'benchmark': False,
+        'deterministic': True,
 	}
     
     # load data
