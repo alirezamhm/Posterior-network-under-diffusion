@@ -62,7 +62,10 @@ class PosteriorNetwork(L.LightningModule):
     def kl_loss(self, z_noisy, y):
         loss = 0
         for cls in range(self.num_classes):
-            z_cls = z_noisy[:, (y == cls), :, :].view(self.args.flow_length, -1, self.args.latent_dim) # (flow_length, class_samples, latent_dim) 
+            mask = (y == cls)
+            if not mask.any():
+                continue
+            z_cls = z_noisy[:, mask, :, :].view(self.args.flow_length, -1, self.args.latent_dim) # (flow_length, class_samples, latent_dim) 
             for i in range(self.args.flow_length):
                 log_q_z = self.gaussian_log_prob(z_cls[i])
                 log_p_z = self.flow[cls].log_prob(z_cls[i], start=i+1)
@@ -82,9 +85,9 @@ class PosteriorNetwork(L.LightningModule):
     def add_noise(self, x):
         n_noise_sample = 5 # number of noisy samples per image
         # repeat the batch to add noise for each flow
-        x = x.unsqueeze(0).unsqueeze(2).repeat(self.args.flow_length, 1, self.n_noise_sample, 1, 1, 1) # (flow_length, batch, n_noise_sample, c, h, w)
+        x = x.unsqueeze(0).unsqueeze(2).repeat(self.args.flow_length, 1, n_noise_sample, 1, 1, 1) # (flow_length, batch, n_noise_sample, c, h, w)
         levels = self.calc_noise_levels(function='linear')
-        x += torch.randn_like(x) * levels.view(-1, 1, 1, 1, 1)
+        x += torch.randn_like(x) * levels.view(-1, 1, 1, 1, 1, 1)
         return x
         
     def training_step(self, batch, batch_idx):
@@ -94,7 +97,7 @@ class PosteriorNetwork(L.LightningModule):
         if self.args.type == 'posterior-network-diffusion':
             x_noisy = self.add_noise(x)
             z_noisy = self.noisy_forward(x_noisy)
-            loss += self.kl_loss(z_noisy, y)
+            loss += self.args.kl_reg * self.kl_loss(z_noisy, y)
         self.log('train_loss', loss)
         self.log('train_error', error)
         return loss

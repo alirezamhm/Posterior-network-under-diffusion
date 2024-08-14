@@ -25,6 +25,7 @@ parser.add_argument('-ft', '--flow-type', choices=flow_types.keys(), default='ra
 parser.add_argument('--lr', type=float, default=0.01)
 parser.add_argument('-wd', '--weight-decay', type=float, default=0)
 parser.add_argument('--regr', type=float, default=1e-5, help='Regularization factor in Bayesian loss')
+parser.add_argument('--kl-reg', type=float, default=1e-2, help='Regularization factor in KL divergence')
 parser.add_argument('--scaling', choices=['normal','uniform'], default='normal', help='Data normalization')
 parser.add_argument('-a', '--aug', choices=AUGMENTATIONS, nargs="+", default='', help='Augmentations')
 parser.add_argument('--cpus', type=int, default=1)
