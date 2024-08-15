@@ -2,10 +2,16 @@ import numpy as np
 import torch
 import pandas as pd
 import wandb
+import argparse
 
 from src.dataset import corruptions
 from src.posterior_network import PosteriorNetwork
 from src.baseline import Baseline
+
+
+parser = argparse.ArgumentParser(description='Posterior network under diffusion')
+parser.add_argument('-l', '--limit', type=int, default=None)
+args = parser.parse_args()
 
 def extract_wandb():
     runs = wandb.Api().runs('alirezamhm/posterior-network-under-diffusion')
@@ -20,8 +26,8 @@ def extract_wandb():
 
     return metrics, configs, names
 
-def print_summary(metrics, names):
-    for i in range(len(names)):
+def print_summary(metrics, names, limit=None):
+    for i in range(limit if limit else len(names)):
         id = names[i]
         loss = metrics[i]['val_loss']
         error = metrics[i]['val_error']
@@ -42,4 +48,4 @@ def load_model(args, fn, res, num_classes, class_counts, device=torch.device('cp
 
 if __name__=='__main__':
     metrics, configs, names = extract_wandb()
-    print_summary(metrics, names)
+    print_summary(metrics, names, args.limit)
