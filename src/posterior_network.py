@@ -3,7 +3,6 @@ import torch
 import lightning as L
 from torch import nn
 import torch.nn.functional as F
-from torch.distributions.dirichlet import Dirichlet
 import torch.distributions as tdist
 
 from src.dataset import corruptions
@@ -51,12 +50,12 @@ class PosteriorNetwork(L.LightningModule):
     
     def uce_loss(self, alpha, y):
         alpha_0 = alpha.sum(1).unsqueeze(-1).repeat(1, self.num_classes)
-        entropy = Dirichlet(alpha).entropy().mean()
+        entropy = tdist.Dirichlet(alpha).entropy().mean()
         return torch.mean(y*(torch.digamma(alpha_0) - torch.digamma(alpha))) - self.args.regr * entropy
 
     def gaussian_log_prob(self, z):
         mean = torch.mean(z, dim=0)
-        cov = torch.cov(z.T)
+        cov = torch.cov(z.T) + 1e-3*torch.eye(z.shape[1], device=z.device) # add small noise to the diagonal to prevent singular matrix
         return tdist.MultivariateNormal(mean, cov).log_prob(z)
 
     def kl_loss(self, z_noisy, y):
@@ -86,7 +85,7 @@ class PosteriorNetwork(L.LightningModule):
         n_noise_sample = 5 # number of noisy samples per image
         # repeat the batch to add noise for each flow
         x = x.unsqueeze(0).unsqueeze(2).repeat(self.args.flow_length, 1, n_noise_sample, 1, 1, 1) # (flow_length, batch, n_noise_sample, c, h, w)
-        levels = self.calc_noise_levels(function='linear')
+        levels = self.calc_noise_levels(function='linear').to(x.device)
         x += torch.randn_like(x) * levels.view(-1, 1, 1, 1, 1, 1)
         return x
         
