@@ -9,6 +9,12 @@ from src.dataset import corruptions
 from src.architectures import architectures
 from src.normalizing_flow import NormalizingFlow
 
+noise_functions = {
+    'linear': lambda min, max, n: torch.linspace(min, max, n),
+    'log': lambda min, max, n: torch.logspace(np.log10(min), np.log10(max), n),
+    'sqrt': lambda min, max, n: torch.linspace(min**2, max**2, n)**0.5,
+}
+
 class PosteriorNetwork(L.LightningModule):
     def __init__(self, args, res, num_classes, class_counts):
         super().__init__()
@@ -72,31 +78,27 @@ class PosteriorNetwork(L.LightningModule):
         return loss/(self.num_classes*self.args.flow_length)
 
     def calc_noise_levels(self, function='linear', min=0.01, max=1):
-        if function == 'linear':
-            return torch.linspace(min, max, self.args.flow_length)
-        elif function == 'log':
-            return torch.logspace(np.log10(min), np.log10(max), self.args.flow_length)
-        elif function == 'sqrt':
-            return torch.linspace(min**2, max**2, self.args.flow_length)**0.5
-        else:
-            raise ValueError(f'Unknown function {function}')
+        return noise_functions[function](min, max, self.args.flow_length)
 
     def add_noise(self, x):
         n_noise_sample = 5 # number of noisy samples per image
         # repeat the batch to add noise for each flow
         x = x.unsqueeze(0).unsqueeze(2).repeat(self.args.flow_length, 1, n_noise_sample, 1, 1, 1) # (flow_length, batch, n_noise_sample, c, h, w)
-        levels = self.calc_noise_levels(function='linear').to(x.device)
+        levels = self.calc_noise_levels(function=self.args.noise_function).to(x.device)
         x += torch.randn_like(x) * levels.view(-1, 1, 1, 1, 1, 1)
         return x
         
     def training_step(self, batch, batch_idx):
         x, y = batch
-        alpha = self.forward(x) 
+        alpha = self.forward(x)
         loss, error = self.statistics(alpha, y)
+        self.log('uce_loss', loss)
         if self.args.type == 'posterior-network-diffusion':
             x_noisy = self.add_noise(x)
             z_noisy = self.noisy_forward(x_noisy)
-            loss += self.args.kl_reg * self.kl_loss(z_noisy, y)
+            kl_loss = self.args.kl_reg * self.kl_loss(z_noisy, y)
+            self.log('kl_loss', kl_loss)
+            loss += kl_loss
         self.log('train_loss', loss)
         self.log('train_error', error)
         return loss

@@ -7,7 +7,7 @@ import glob
 from src.architectures import architectures
 from src.dataset import load_data, data_dirs
 from src.baseline import Baseline
-from src.posterior_network import PosteriorNetwork
+from src.posterior_network import PosteriorNetwork, noise_functions
 from src.normalizing_flow import flow_types
 
 AUGMENTATIONS = ('','f','c','r','fcr')
@@ -26,7 +26,8 @@ parser.add_argument('-ft', '--flow-type', choices=flow_types.keys(), default='ra
 parser.add_argument('--lr', type=float, default=0.01)
 parser.add_argument('-wd', '--weight-decay', type=float, default=0)
 parser.add_argument('--regr', type=float, default=1e-5, help='Regularization factor in Bayesian loss')
-parser.add_argument('--kl-reg', type=float, default=1, help='Regularization factor in KL divergence')
+parser.add_argument('--kl-reg', type=float, default=0, help='Regularization factor in KL divergence')
+parser.add_argument('--noise-function', choices=noise_functions.keys(), default='linear', help='Noise function')
 parser.add_argument('-fn', type=str, default=None, help='Run id for loading posterior-network-diffusion')
 parser.add_argument('--scaling', choices=['normal','uniform'], default='normal', help='Data normalization')
 parser.add_argument('-a', '--aug', choices=AUGMENTATIONS, nargs="+", default='', help='Augmentations')
@@ -41,10 +42,14 @@ def args2str(args):
         s += f'-pretrained'
     s += f'-E({args.epoch})' 
     s += f'-S({args.seed})'
+    s += f'-L({args.lr:.0e})'
     if args.aug:
         s += f'-A({",".join(args.aug)})'
     if args.type != 'baseline':
         s += f'-LD({args.latent_dim})-FL({args.flow_length})-FT({args.flow_type})'
+    if args.type == 'posterior-network-diffusion':
+        s += f'-NF({args.noise_function})'
+        s += f'-KL({args.kl_reg:.0e})'
     return s
 
 
