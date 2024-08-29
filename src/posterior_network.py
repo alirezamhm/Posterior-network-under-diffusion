@@ -26,6 +26,13 @@ class PosteriorNetwork(L.LightningModule):
         self.flow = nn.ModuleList([NormalizingFlow(dim=args.latent_dim, flow_length=args.flow_length, flow_type=args.flow_type) for _ in range(num_classes)])
         self.batch_norm = nn.BatchNorm1d(num_features=args.latent_dim)
         self.register_buffer("class_counts", class_counts) # Put tensor on the same device as the model
+        if not args.bn_track:
+            self.disable_batch_tracking()
+    
+    def disable_batch_tracking(self):
+        for module in self.net.modules():
+            if isinstance(module, nn.BatchNorm2d):
+                module.track_running_stats = False
         
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.args.lr, weight_decay=self.args.weight_decay)
@@ -118,6 +125,10 @@ class PosteriorNetwork(L.LightningModule):
             intensity = 1 + batch_idx // int(50000/(5*self.args.val_batchsize)) # separate the intensity in each corrupt loader
             self.log(f'loss/{self.corruptions[dataloader_idx-1]}_{intensity}', loss, add_dataloader_idx=False, sync_dist=True)
             self.log(f'error/{self.corruptions[dataloader_idx-1]}_{intensity}', error, add_dataloader_idx=False, sync_dist=True)
+           
+    def on_train_epoch_start(self):
+        if self.current_epoch == 200 and self.args.type == 'posterior-network-switch':
+            self.args.type = 'posterior-network-diffusion'
             
     def process_batch_with_class_flow(self, z, y):
         results = torch.zeros((self.args.flow_length, *z.shape))

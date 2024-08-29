@@ -16,7 +16,7 @@ AUGMENTATIONS = ('','f','c','r','fcr')
 parser = argparse.ArgumentParser(description='Posterior network under diffusion')
 parser.add_argument('-d', '--data', choices=data_dirs.keys(), default='cifar10')
 parser.add_argument('--arch', choices=architectures.keys(), default='resnet18')
-parser.add_argument('-t', '--type', choices=['baseline', 'posterior-network', 'posterior-network-diffusion'], default='baseline')
+parser.add_argument('-t', '--type', choices=['baseline', 'posterior-network', 'posterior-network-diffusion', 'posterior-network-switch'], default='baseline')
 parser.add_argument('-b', '--batchsize', type=int, default=256)
 parser.add_argument('-vb', '--val-batchsize', type=int, choices=[100, 200, 500, 1000, 2000], default=100)
 parser.add_argument('-e', '--epoch', type=int, default=200)
@@ -28,6 +28,7 @@ parser.add_argument('-wd', '--weight-decay', type=float, default=0)
 parser.add_argument('--regr', type=float, default=1e-5, help='Regularization factor in Bayesian loss')
 parser.add_argument('--kl-reg', type=float, default=0, help='Regularization factor in KL divergence')
 parser.add_argument('--noise-function', choices=noise_functions.keys(), default='linear', help='Noise function')
+parser.add_argument('--bn-track', type=bool, default=True, help='Batch normalization tracking')
 parser.add_argument('-fn', type=str, default=None, help='Run id for loading posterior-network-diffusion')
 parser.add_argument('--scaling', choices=['normal','uniform'], default='normal', help='Data normalization')
 parser.add_argument('-a', '--aug', choices=AUGMENTATIONS, nargs="+", default='', help='Augmentations')
@@ -43,13 +44,15 @@ def args2str(args):
     s += f'-E({args.epoch})' 
     s += f'-S({args.seed})'
     s += f'-L({args.lr:.0e})'
+    s += f'-B({args.batchsize})'
     if args.aug:
         s += f'-A({",".join(args.aug)})'
     if args.type != 'baseline':
         s += f'-LD({args.latent_dim})-FL({args.flow_length})-FT({args.flow_type})'
-    if args.type == 'posterior-network-diffusion':
+    if args.type == 'posterior-network-diffusion' or args.type == 'posterior-network-switch':
         s += f'-NF({args.noise_function})'
         s += f'-KL({args.kl_reg:.0e})'
+    s += f'-BN({args.bn_track})'
     return s
 
 
