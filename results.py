@@ -29,13 +29,17 @@ def extract_wandb():
 def print_summary(metrics, names, limit=None):
     for i in range(limit if limit else len(names)):
         id = names[i]
-        loss = metrics[i]['val_loss']
-        error = metrics[i]['val_error']
-        
-        corr_loss = np.mean([metrics[i][f'loss/{c}_{k+1}'] for c in corruptions for k in range(5)])
-        corr_error = np.mean([metrics[i][f'error/{c}_{k+1}'] for c in corruptions for k in range(5)])
+        try:
+            loss = metrics[i]['val_loss']
+            error = metrics[i]['val_error']
+            
+            corr_loss = np.mean([metrics[i][f'loss/{c}_{k+1}'] for c in corruptions for k in range(5)])
+            corr_error = np.mean([metrics[i][f'error/{c}_{k+1}'] for c in corruptions for k in range(5)])
 
-        print(f'{i+1:03d} | loss {loss:.4f} error {error:.4f}  corr_loss {corr_loss:.4f} corr_error {corr_error:.4f} | {id} ')        
+            print(f'{i+1:03d} | {id}')
+            print(f'loss {loss:.4f} error {error:.4f}  corr_loss {corr_loss:.4f} corr_error {corr_error:.4f}')        
+        except:
+            pass        
 
 def load_model(args, fn, res, num_classes, class_counts, device=torch.device('cpu')):
     if args.type == 'baseline':
