@@ -28,7 +28,7 @@ parser.add_argument('-wd', '--weight-decay', type=float, default=0)
 parser.add_argument('--regr', type=float, default=1e-5, help='Regularization factor in Bayesian loss')
 parser.add_argument('--kl-reg', type=float, default=0, help='Regularization factor in KL divergence')
 parser.add_argument('--noise-function', choices=noise_functions.keys(), default='linear', help='Noise function')
-parser.add_argument('--bn-track', type=bool, default=True, help='Batch normalization tracking')
+parser.add_argument('--bn-track-disable', action='store_true', help='Disable batch normalization tracking')
 parser.add_argument('-fn', type=str, default=None, help='Run id for loading posterior-network-diffusion')
 parser.add_argument('--scaling', choices=['normal','uniform'], default='normal', help='Data normalization')
 parser.add_argument('-a', '--aug', choices=AUGMENTATIONS, nargs="+", default='', help='Augmentations')
@@ -52,9 +52,9 @@ def args2str(args):
     if args.type == 'posterior-network-diffusion' or args.type == 'posterior-network-switch':
         s += f'-NF({args.noise_function})'
         s += f'-KL({args.kl_reg:.0e})'
-    s += f'-BN({args.bn_track})'
+    if args.bn_track_disable:
+        s += f'-BNT(Disable)'
     return s
-
 
 if __name__=='__main__':
     L.pytorch.seed_everything(args.seed, workers=True)

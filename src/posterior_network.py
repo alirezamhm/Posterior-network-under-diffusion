@@ -26,13 +26,15 @@ class PosteriorNetwork(L.LightningModule):
         self.flow = nn.ModuleList([NormalizingFlow(dim=args.latent_dim, flow_length=args.flow_length, flow_type=args.flow_type) for _ in range(num_classes)])
         self.batch_norm = nn.BatchNorm1d(num_features=args.latent_dim)
         self.register_buffer("class_counts", class_counts) # Put tensor on the same device as the model
-        if not args.bn_track:
+        if args.bn_track_disable:
             self.disable_batch_tracking()
     
     def disable_batch_tracking(self):
         for module in self.net.modules():
             if isinstance(module, nn.BatchNorm2d):
                 module.track_running_stats = False
+                module.running_mean = None
+                module.running_var = None
         
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.args.lr, weight_decay=self.args.weight_decay)
@@ -81,7 +83,7 @@ class PosteriorNetwork(L.LightningModule):
             for i in range(self.args.flow_length):
                 log_q_z = self.gaussian_log_prob(z_cls[i])
                 log_p_z = self.flow[cls].log_prob(z_cls[i], start=i+1)
-                loss += (torch.exp(log_q_z)*(log_q_z - log_p_z)).mean()
+                loss += F.kl_div(input=log_p_z, target=log_q_z, reduction='batchmean', log_target=True)
         return loss/(self.num_classes*self.args.flow_length)
 
     def calc_noise_levels(self, function='linear', min=0.01, max=1):
