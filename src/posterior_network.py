@@ -26,6 +26,7 @@ class PosteriorNetwork(L.LightningModule):
         self.flow = nn.ModuleList([NormalizingFlow(dim=args.latent_dim, flow_length=args.flow_length, flow_type=args.flow_type) for _ in range(num_classes)])
         self.batch_norm = nn.BatchNorm1d(num_features=args.latent_dim)
         self.register_buffer("class_counts", class_counts) # Put tensor on the same device as the model
+        self.validation_outputs = []  # Initialize a list to store validation outputs
         if args.bn_track_disable:
             self.disable_batch_tracking()
     
@@ -128,6 +129,15 @@ class PosteriorNetwork(L.LightningModule):
             self.log(f'loss/{self.corruptions[dataloader_idx-1]}_{intensity}', loss, add_dataloader_idx=False, sync_dist=True)
             self.log(f'error/{self.corruptions[dataloader_idx-1]}_{intensity}', error, add_dataloader_idx=False, sync_dist=True)
            
+        self.validation_outputs.append({'loss': loss, 'error': error, 'dataloader_idx': dataloader_idx})
+    
+    def on_validation_epoch_end(self):
+        avg_corr_loss = torch.stack([output['loss'] for output in self.validation_outputs if output['dataloader_idx'] > 0]).mean()
+        avg_corr_error = torch.stack([output['error'] for output in self.validation_outputs if output['dataloader_idx'] > 0]).mean()
+        self.log('corr_loss', avg_corr_loss, sync_dist=True)
+        self.log('corr_error', avg_corr_error, sync_dist=True)
+        self.validation_outputs.clear()
+    
     def on_train_epoch_start(self):
         if self.current_epoch == 200 and self.args.type == 'posterior-network-switch':
             self.args.type = 'posterior-network-diffusion'
