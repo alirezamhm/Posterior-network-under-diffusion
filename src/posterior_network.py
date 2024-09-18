@@ -28,14 +28,25 @@ class PosteriorNetwork(L.LightningModule):
         self.register_buffer("class_counts", class_counts) # Put tensor on the same device as the model
         self.validation_outputs = []  # Initialize a list to store validation outputs
         if args.bn_track_disable:
-            self.disable_batch_tracking()
+            self.disable_batch_tracking(self.net)
+            self.disable_batch_tracking(self.batch_norm)
+        if args.bn_remove:
+            self.remove_batchnorm(self.net)
+            self.batch_norm = nn.Identity()
     
-    def disable_batch_tracking(self):
-        for module in self.net.modules():
-            if isinstance(module, nn.BatchNorm2d):
+    def disable_batch_tracking(self, net):
+        for module in net.modules():
+            if isinstance(module, nn.BatchNorm2d) or isinstance(module, nn.BatchNorm1d):
                 module.track_running_stats = False
                 module.running_mean = None
                 module.running_var = None
+    
+    def remove_batchnorm(self, module):
+        for name, child in module.named_children():
+            if isinstance(child, nn.BatchNorm2d) or isinstance(child, nn.BatchNorm1d):
+                setattr(module, name, nn.Identity())
+            else:
+                self.remove_batchnorm(child)
         
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.args.lr, weight_decay=self.args.weight_decay)
@@ -53,8 +64,11 @@ class PosteriorNetwork(L.LightningModule):
     
     def noisy_forward(self, x_noisy):
         flow_length, batch_size, n_noise_sample, c, h, w = x_noisy.shape
+        
         x_noisy = x_noisy.view(flow_length * batch_size * n_noise_sample, c, h, w) # reshape to input to the network
         z_noisy = self.net_forward(x_noisy).view(flow_length, batch_size, n_noise_sample, -1)
+        
+
         return z_noisy
     
     def statistics(self, alpha, y):

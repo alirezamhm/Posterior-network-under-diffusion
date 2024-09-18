@@ -29,6 +29,7 @@ parser.add_argument('--regr', type=float, default=1e-5, help='Regularization fac
 parser.add_argument('--kl-reg', type=float, default=0, help='Regularization factor in KL divergence')
 parser.add_argument('--noise-function', choices=noise_functions.keys(), default='linear', help='Noise function')
 parser.add_argument('--bn-track-disable', action='store_true', help='Disable batch normalization tracking')
+parser.add_argument('--bn-remove', action='store_true', help='Remove batch normalization')
 parser.add_argument('-fn', type=str, default=None, help='Run id for loading posterior-network-diffusion')
 parser.add_argument('--scaling', choices=['normal','uniform'], default='normal', help='Data normalization')
 parser.add_argument('-a', '--aug', choices=AUGMENTATIONS, nargs="+", default='', help='Augmentations')
@@ -52,7 +53,9 @@ def args2str(args):
     if args.type == 'posterior-network-diffusion' or args.type == 'posterior-network-switch':
         s += f'-NF({args.noise_function})'
         s += f'-KL({args.kl_reg:.0e})'
-    if args.bn_track_disable:
+    if args.bn_remove:
+        s += f'-BN(Remove)'
+    elif args.bn_track_disable:
         s += f'-BNT(Disable)'
     return s
 
@@ -93,7 +96,9 @@ if __name__=='__main__':
         fn = glob.glob(f"posterior-network-under-diffusion/{args.fn}/checkpoints/*.ckpt")
         if not fn:
             raise FileNotFoundError(f"No files found matching run id: {args.fn}")
-        model.load_state_dict(torch.load(fn[0])['state_dict'])
+        checkpoint = torch.load(fn[0])
+        model.load_state_dict(checkpoint['state_dict'])
+        model.current_epoch = checkpoint['epoch']
         
     # train model
     trainer = L.Trainer(**trainer_args)
