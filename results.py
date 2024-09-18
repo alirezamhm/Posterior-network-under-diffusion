@@ -9,10 +9,6 @@ from src.posterior_network import PosteriorNetwork
 from src.baseline import Baseline
 
 
-parser = argparse.ArgumentParser(description='Posterior network under diffusion')
-parser.add_argument('-l', '--limit', type=int, default=None)
-args = parser.parse_args()
-
 def extract_wandb():
     runs = wandb.Api().runs('alirezamhm/posterior-network-under-diffusion')
     metrics, configs, names = [], [], []
@@ -44,12 +40,15 @@ def print_summary(metrics, names, limit=None):
 def load_model(args, fn, res, num_classes, class_counts, device=torch.device('cpu')):
     if args.type == 'baseline':
         model = Baseline(args, res, num_classes)
-    elif args.type == 'posterior-network':
+    else:
         model = PosteriorNetwork(args, res, num_classes, class_counts)
     checkpoint = torch.load(fn, map_location=device)
     model.load_state_dict(checkpoint['state_dict'])
     return model
 
 if __name__=='__main__':
+    parser = argparse.ArgumentParser(description='Posterior network under diffusion')
+    parser.add_argument('-l', '--limit', type=int, default=None)
+    args = parser.parse_args()
     metrics, configs, names = extract_wandb()
     print_summary(metrics, names, args.limit)
