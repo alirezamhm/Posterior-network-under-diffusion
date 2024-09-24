@@ -67,8 +67,6 @@ class PosteriorNetwork(L.LightningModule):
         
         x_noisy = x_noisy.view(flow_length * batch_size * n_noise_sample, c, h, w) # reshape to input to the network
         z_noisy = self.net_forward(x_noisy).view(flow_length, batch_size, n_noise_sample, -1)
-        
-
         return z_noisy
     
     def statistics(self, alpha, y):
@@ -104,8 +102,7 @@ class PosteriorNetwork(L.LightningModule):
     def calc_noise_levels(self, function='linear', min=0.01, max=1):
         return noise_functions[function](min, max, self.args.flow_length)
 
-    def add_noise(self, x):
-        n_noise_sample = 5 # number of noisy samples per image
+    def add_noise(self, x, n_noise_sample=5):
         # repeat the batch to add noise for each flow
         x = x.unsqueeze(0).unsqueeze(2).repeat(self.args.flow_length, 1, n_noise_sample, 1, 1, 1) # (flow_length, batch, n_noise_sample, c, h, w)
         levels = self.calc_noise_levels(function=self.args.noise_function).to(x.device)

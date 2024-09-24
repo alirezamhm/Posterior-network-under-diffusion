@@ -37,14 +37,6 @@ def print_summary(metrics, names, limit=None):
         except:
             pass        
 
-def load_model(args, fn, res, num_classes, class_counts, device=torch.device('cpu')):
-    if args.type == 'baseline':
-        model = Baseline(args, res, num_classes)
-    else:
-        model = PosteriorNetwork(args, res, num_classes, class_counts)
-    checkpoint = torch.load(fn, map_location=device)
-    model.load_state_dict(checkpoint['state_dict'])
-    return model
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description='Posterior network under diffusion')
