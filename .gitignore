@@ -9,6 +9,8 @@ posterior-network-under-diffusion
 results.csv
 lightning_logs
 t.py
+samples/*/
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
